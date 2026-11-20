@@ -1,9 +1,105 @@
-<!DOCTYPE html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="산업연관표를 활용한 산업별 경제적 파급효과 분석 웹앱">
+  <title>산업연관분석 플랫폼</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">IO</span><div><strong>산업연관분석 플랫폼</strong><small>INPUT–OUTPUT ANALYSIS</small></div></div>
+    <span class="top-tag">GitHub Pages 지원</span>
+  </header>
 
-<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>과제물1: 산업연관표분석 웹앱</title><link href="./style.css" rel="stylesheet"/><script defer="" src="./app.js"></script></head>
-<body><header><p>2023 · 생산자가격 · 기본부문</p><h1>과제물1: 산업연관표분석 웹앱</h1><p>12개 원자료 시트 탐색과 380개 부문 수요충격 분석</p></header>
-<nav aria-label="주요 메뉴"><a href="#explorer">원자료 탐색</a><a href="#simulation">시뮬레이터</a></nav><main>
-<aside aria-label="분석 준비 상태" class="loading-status"><p id="status" role="status">"기본부문 불러오기" 버튼을 눌러 자료를 불러오세요.</p><details><summary>계수 검증 결과</summary><pre id="validation">아직 자료를 불러오지 않았습니다.</pre></details></aside>
-<section id="explorer"><div class="section-heading"><h2>1. 원자료 탐색</h2><button id="load-basic" type="button">기본부문 불러오기</button></div><p>선택한 행이 각 열과 어떻게 연결되는지 확인합니다. 산업 행뿐 아니라 원표의 합계·분석지표 행도 포함됩니다.</p><label>시트<select disabled="" id="sheet"></select></label><label>행 이름 검색<input disabled="" id="row-search" placeholder="예: 자동차, 부가가치"/></label><label>행 선택<select disabled="" id="row"></select></label><p id="unit"></p><label>열 검색<input disabled="" id="col-search" placeholder="열 이름 또는 코드"/></label><div class="scroll"><table><caption id="explore-caption">기본 자료를 불러온 후 표시됩니다.</caption><thead><tr><th>열 코드</th><th>열 이름</th><th>원자료 값</th></tr></thead><tbody id="cells"></tbody></table></div><p class="note">스크롤하여 전체 열을 볼 수 있습니다. 금액표의 일반 데이터 단위는 백만원입니다. 구성비·유발계수 등 요약 행은 행 명칭을 우선 확인하세요.</p></section>
-<section id="simulation"><h2>2. 국내 생산물 최종수요 증가 시뮬레이션</h2><p>수입 완제품 구매를 제외한 국내 생산물 최종수요 증가를 입력하세요. 여러 산업의 증가액은 합산됩니다.</p><label>산업 검색<input disabled="" id="sector-search" placeholder="산업 이름 또는 코드"/></label><form id="scenario"><label>산업<select disabled="" id="sector" required=""></select></label><label>증가액 (백만원)<input disabled="" id="amount" min="0.01" required="" step="any" type="number" value="1000"/></label><p class="note">1,000백만원 = 10억원. 이번 버전은 양의 수요 증가만 지원합니다.</p><button disabled="" id="add">시나리오에 추가</button></form><ul id="basket"></ul><button disabled="" id="run">파급효과 계산</button><button id="clear">시나리오 비우기</button><p id="sim-status" role="status">시나리오를 추가하세요.</p><div hidden="" id="results"><div class="cards" id="cards"></div><h3>생산유발액 상위 15개 산업</h3><div id="bars"></div><button id="download">전체 380개 산업 CSV 다운로드</button><div class="scroll"><table><caption>산업별 유발액 — 백만원, 생산유발액 내림차순</caption><thead><tr><th>코드</th><th>산업</th><th>생산</th><th>수입</th><th>부가가치</th></tr></thead><tbody id="result-rows"></tbody></table></div></div></section>
-</main><footer>브라우저 계산 · GitHub Pages 배포용</footer></body></html>
+  <div class="layout">
+    <aside class="sidebar">
+      <p class="nav-title">ANALYSIS</p>
+      <a class="nav-link active" href="#dashboard">대시보드</a>
+      <a class="nav-link" href="#data">데이터 불러오기</a>
+      <a class="nav-link" href="#analysis">산업별 분석</a>
+      <a class="nav-link" href="#simulation">파급효과 시뮬레이터</a>
+      <a class="nav-link" href="#ranking">산업별 순위</a>
+      <a class="nav-link" href="#guide">분석 방법 및 유의사항</a>
+      <div class="sidebar-note"><strong>분석 안내</strong><p>산업연관표의 거래행렬과 총산출액을 이용해 생산유발효과 등을 계산합니다. 실제 데이터 구조에 맞게 범위를 지정하세요.</p></div>
+    </aside>
+
+    <main class="content">
+      <section class="page-heading" id="dashboard">
+        <div><p class="eyebrow">ECONOMIC DATA ANALYTICS</p><h1>산업연관분석 대시보드</h1><p class="muted">산업 간 거래구조를 분석하고 최종수요 변화의 경제적 파급효과를 살펴봅니다.</p></div>
+        <button class="btn secondary" id="sampleBtn">예시 데이터로 체험</button>
+      </section>
+
+      <section class="notice" id="statusBox"><span class="status-dot"></span><span id="statusText">엑셀 파일을 업로드하거나 예시 데이터로 분석을 시작하세요.</span></section>
+
+      <section class="kpi-grid">
+        <article class="kpi"><span>분석 산업 수</span><strong id="kpiCount">-</strong><small>선택한 산업연관표 기준</small></article>
+        <article class="kpi"><span>평균 생산유발계수</span><strong id="kpiProduction">-</strong><small>산업별 열합 평균</small></article>
+        <article class="kpi"><span>평균 영향력계수</span><strong id="kpiInfluence">-</strong><small>전체 산업 평균 대비</small></article>
+        <article class="kpi"><span>평균 감응도계수</span><strong id="kpiSensitivity">-</strong><small>전체 산업 평균 대비</small></article>
+      </section>
+
+      <section class="panel" id="data">
+        <div class="section-title"><div><p class="eyebrow">01 / DATA</p><h2>산업연관표 데이터 불러오기</h2></div><span class="pill">Excel · XLSX · XLS</span></div>
+        <div class="upload-row">
+          <label class="file-picker">엑셀 파일 선택<input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm"></label>
+          <span id="fileName" class="muted">선택된 파일 없음</span>
+          <label class="field compact">시트<select id="sheetSelect" disabled><option>파일을 먼저 선택하세요</option></select></label>
+        </div>
+        <div class="config-grid">
+          <label class="field">산업명 헤더 행 (1부터)<input id="headerRow" type="number" min="1" value="1"></label>
+          <label class="field">첫 산업 데이터 행 (1부터)<input id="firstRow" type="number" min="1" value="2"></label>
+          <label class="field">첫 산업 열 (A=1)<input id="firstCol" type="number" min="1" value="2"></label>
+          <label class="field">산업 개수<input id="sectorCount" type="number" min="1" value="5"></label>
+          <label class="field">총산출액 열 (선택)<input id="outputCol" type="number" min="0" value="0"><small>0이면 거래행렬 열합을 사용합니다.</small></label>
+          <label class="field">금액 단위<input id="unitLabel" type="text" value="백만원" placeholder="예: 백만원, 억원"></label>
+        </div>
+        <p class="help">기본 설정은 예시 형식입니다. 선택한 시트에서 산업별 중간거래 행렬 Z가 정사각형으로 연속 배치되어 있어야 합니다. 첫 산업 열과 첫 산업 데이터 행을 실제 엑셀 구조에 맞춰 조정하세요.</p>
+        <div class="actions"><button class="btn primary" id="loadDataBtn" disabled>선택한 시트 분석하기</button><button class="btn ghost" id="downloadSampleBtn">예시 엑셀 다운로드</button></div>
+      </section>
+
+      <section class="panel" id="analysis">
+        <div class="section-title"><div><p class="eyebrow">02 / INDUSTRY ANALYSIS</p><h2>산업별 핵심 지표</h2></div><span class="pill" id="unitPill">단위: -</span></div>
+        <div class="table-wrap"><table><thead><tr><th>산업</th><th>생산유발계수</th><th>영향력계수</th><th>감응도계수</th><th>총산출액</th></tr></thead><tbody id="resultsBody"><tr><td colspan="5" class="empty">데이터를 불러오면 분석 결과가 표시됩니다.</td></tr></tbody></table></div>
+        <div class="charts-grid">
+          <div class="chart-card"><h3>산업별 생산유발계수</h3><canvas id="productionChart"></canvas></div>
+          <div class="chart-card"><h3>영향력계수와 감응도계수</h3><canvas id="linkageChart"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel" id="simulation">
+        <div class="section-title"><div><p class="eyebrow">03 / SIMULATOR</p><h2>최종수요 변화 시뮬레이터</h2></div><span class="pill">Leontief inverse</span></div>
+        <div class="sim-grid">
+          <label class="field">대상 산업<select id="simSector" disabled><option>데이터를 먼저 불러오세요</option></select></label>
+          <label class="field">최종수요 증가액<input id="shockAmount" type="number" min="0" step="any" value="100000"></label>
+          <label class="field">금액 단위<input id="simUnit" type="text" value="백만원"></label>
+        </div>
+        <button class="btn primary" id="simulateBtn" disabled>파급효과 계산</button>
+        <div class="sim-results" id="simResults"><div class="empty">산업연관표를 불러온 뒤 시뮬레이션을 실행하세요.</div></div>
+        <div class="chart-card"><h3>산업별 생산유발액</h3><canvas id="simulationChart"></canvas></div>
+      </section>
+
+      <section class="panel" id="ranking">
+        <div class="section-title"><div><p class="eyebrow">04 / RANKING</p><h2>산업별 경제적 영향력 순위</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>순위</th><th>산업</th><th>영향력계수</th><th>감응도계수</th><th>해석</th></tr></thead><tbody id="rankingBody"><tr><td colspan="5" class="empty">분석 결과가 여기에 표시됩니다.</td></tr></tbody></table></div>
+      </section>
+
+      <section class="panel" id="guide">
+        <div class="section-title"><div><p class="eyebrow">05 / METHODOLOGY</p><h2>분석 방법 및 유의사항</h2></div></div>
+        <div class="formula-grid">
+          <article><h3>투입계수행렬</h3><p class="formula">aᵢⱼ = zᵢⱼ / xⱼ</p><p>산업 j의 총산출액 중 산업 i의 투입이 차지하는 비율입니다.</p></article>
+          <article><h3>생산유발계수행렬</h3><p class="formula">B = (I − A)⁻¹</p><p>레온티에프 역행렬로, 최종수요 한 단위 변화에 따른 산업별 생산유발효과를 나타냅니다.</p></article>
+          <article><h3>영향력계수</h3><p class="formula">열합계 / 전체 평균</p><p>해당 산업의 최종수요 증가가 다른 산업의 생산을 얼마나 유발하는지 나타냅니다.</p></article>
+          <article><h3>감응도계수</h3><p class="formula">행합계 / 전체 평균</p><p>모든 산업의 최종수요 변화에 해당 산업이 얼마나 영향을 받는지 나타냅니다.</p></article>
+        </div>
+        <div class="warning"><strong>중요한 데이터 유의사항</strong><p>이 웹앱은 사용자가 지정한 정사각형 중간거래행렬 Z와 총산출액 x를 바탕으로 계산합니다. 총산출액 열을 지정하지 않으면 Z의 열합을 대체값으로 사용하므로 정식 산업연관표의 총산출액과 다를 수 있습니다. 수입유발계수·부가가치유발계수·취업유발계수는 해당 계수행 또는 원자료가 추가로 필요하므로 이 기본 버전에서는 자동 산출하지 않습니다. 실제 과제 제출 전에는 데이터의 분류·단위·행렬 방향을 반드시 확인하세요.</p></div>
+      </section>
+      <footer>산업연관분석 플랫폼 · 학습 및 과제용 프로토타입</footer>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
